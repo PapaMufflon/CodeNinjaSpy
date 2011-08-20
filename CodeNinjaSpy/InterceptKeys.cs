@@ -53,10 +53,6 @@ namespace MufflonoSoft.CodeNinjaSpy
                         _pressedKeys.Remove(pressedKey);
                 }
 
-                if (pressedKey == Keys.N)
-                {
-                    pressedKey = pressedKey;
-                }
                 OnKeysIntercepted(_pressedKeys);
             }
 

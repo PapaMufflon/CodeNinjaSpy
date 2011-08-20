@@ -4,12 +4,11 @@
     <Name>CodeNinjaSpy</Name>
     <Author>Mufflon-o-Soft</Author>
     <Version>1.0</Version>
-    <Description xml:space="preserve">Look over the shoulders of a code ninja and see what shortcut he uses.
-
-Icons by: FastIcon.com.</Description>
+    <Description xml:space="preserve">Look over the shoulders of a code ninja and see what shortcut he uses.</Description>
     <Locale>1033</Locale>
     <MoreInfoUrl>http://github.com/PapaMufflon/CodNinjaSpy</MoreInfoUrl>
-    <Icon>NinjaToy_128x128.ico</Icon>
+    <Icon>ninja-icon.png</Icon>
+    <PreviewImage>CodeNinjaSpy.png</PreviewImage>
     <InstalledByMsi>false</InstalledByMsi>
     <SupportedProducts>
       <VisualStudio Version="10.0">

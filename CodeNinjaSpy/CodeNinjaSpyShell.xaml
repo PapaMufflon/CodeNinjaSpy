@@ -10,8 +10,12 @@
     </UserControl.Background>
     <Viewbox>
         <Grid Width="300" Height="300" x:Name="LayoutRoot">
-            <TextBlock Text="{Binding LastShortcut, Mode=OneWay}" FontSize="36" Foreground="#FF00C000" Margin="0,0,0,54" HorizontalAlignment="Center" />
-            <TextBlock Text="{Binding LastCommand, Mode=OneWay}" Foreground="#FF008600" Margin="0,247,0,0" Height="53" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding CurrentShortcut, Mode=OneWay}" FontSize="36" Foreground="#FF00C000" Margin="0,40,0,200" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding CurrentCommand, Mode=OneWay}" Foreground="#FF008600" Margin="0,100,0,170" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding LastShortcut, Mode=OneWay}" FontSize="24" Foreground="#FF009000" Margin="0,140,0,120" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding LastCommand, Mode=OneWay}" Foreground="#FF008600" Margin="0,180,0,90" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding NextToLastShortcut, Mode=OneWay}" FontSize="18" Foreground="#FF009000" Margin="0,220,0,50" HorizontalAlignment="Center" />
+            <TextBlock Text="{Binding NextToLastCommand, Mode=OneWay}" Foreground="#FF008600" Margin="0,250,0,20" HorizontalAlignment="Center" />
         </Grid>
     </Viewbox>
 </UserControl>

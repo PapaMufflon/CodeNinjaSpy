@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -8,27 +7,32 @@ using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Threading;
 using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio.Shell;
 
 namespace MufflonoSoft.CodeNinjaSpy
 {
     public partial class CodeNinjaSpyShell : INotifyPropertyChanged
     {
-        public ObservableCollection<Command> Commands { get; private set; }
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         private readonly InterceptKeys _keyInterceptor;
         private readonly Dispatcher _dispatcher;
+        private readonly List<Command> _commands = new List<Command>();
+        private string _currentShortcut;
+        private string _currentCommand;
         private string _lastShortcut;
         private string _lastCommand;
+        private string _nextToLastShortcut;
+        private string _nextToLastCommand;
 
-        public CodeNinjaSpyShell(ObservableCollection<Command> commands)
+        public CodeNinjaSpyShell()
         {
             InitializeComponent();
             PaintBackground();
-
-            Commands = commands;
             DataContext = this;
+
+            System.Threading.Tasks.Task.Factory.StartNew(FetchCommandsWithBindings);
 
             _dispatcher = Dispatcher;
 
@@ -65,13 +69,29 @@ namespace MufflonoSoft.CodeNinjaSpy
             LayoutRoot.Background = myBrush;
         }
 
+        private void FetchCommandsWithBindings()
+        {
+            var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+
+            if (dte != null)
+            {
+                foreach (Command command in dte.Commands)
+                {
+                    var bindings = command.Bindings as object[];
+
+                    if (bindings != null && bindings.Length > 0)
+                        _commands.Add(command);
+                }
+            }
+        }
+
         private void TryGetShortcut(ICollection<Keys> pressedKeys)
         {
             if (pressedKeys.Count > 1)
             {
                 var keyBinding = ConvertToKeyBinding(pressedKeys);
 
-                foreach (var command in Commands)
+                foreach (var command in _commands)
                 {
                     var bindings = command.Bindings as object[];
 
@@ -125,7 +145,7 @@ namespace MufflonoSoft.CodeNinjaSpy
             return keyBinding;
         }
 
-        private void UpdateShortcut(List<string> keyBinding, Command command)
+        private void UpdateShortcut(IEnumerable<string> keyBinding, Command command)
         {
             Action action = () =>
             {
@@ -133,11 +153,37 @@ namespace MufflonoSoft.CodeNinjaSpy
                 if (lastShortcut.EndsWith("+"))
                     lastShortcut = lastShortcut.Substring(0, lastShortcut.Length - 1);
 
-                LastShortcut = lastShortcut;
-                LastCommand = command.Name;
+                NextToLastShortcut = LastShortcut;
+                NextToLastCommand = LastCommand;
+                LastShortcut = CurrentShortcut;
+                LastCommand = CurrentCommand;
+                CurrentShortcut = lastShortcut;
+                CurrentCommand = command.Name;
             };
 
             _dispatcher.Invoke(action);
+        }
+
+        public string CurrentShortcut
+        {
+            get { return _currentShortcut; }
+
+            set
+            {
+                _currentShortcut = value;
+                OnPropertyChanged("CurrentShortcut");
+            }
+        }
+
+        public string CurrentCommand
+        {
+            get { return _currentCommand; }
+
+            set
+            {
+                _currentCommand = value;
+                OnPropertyChanged("CurrentCommand");
+            }
         }
 
         public string LastShortcut
@@ -159,6 +205,28 @@ namespace MufflonoSoft.CodeNinjaSpy
             {
                 _lastCommand = value;
                 OnPropertyChanged("LastCommand");
+            }
+        }
+
+        public string NextToLastShortcut
+        {
+            get { return _nextToLastShortcut; }
+
+            set
+            {
+                _nextToLastShortcut = value;
+                OnPropertyChanged("NextToLastShortcut");
+            }
+        }
+
+        public string NextToLastCommand
+        {
+            get { return _nextToLastCommand; }
+
+            set
+            {
+                _nextToLastCommand = value;
+                OnPropertyChanged("NextToLastCommand");
             }
         }
 
