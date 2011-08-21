@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Media;
@@ -25,6 +27,10 @@ namespace MufflonoSoft.CodeNinjaSpy
         private string _lastCommand;
         private string _nextToLastShortcut;
         private string _nextToLastCommand;
+        private string _currentWindow;
+        private double _status;
+        private string _statusText;
+        private bool _isLoading;
 
         public CodeNinjaSpyShell()
         {
@@ -50,7 +56,7 @@ namespace MufflonoSoft.CodeNinjaSpy
 
             var checkerBrush = new LinearGradientBrush();
             checkerBrush.GradientStops.Add(new GradientStop(Colors.Black, 0.0));
-            checkerBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0,22,0), 1.0));
+            checkerBrush.GradientStops.Add(new GradientStop(Color.FromRgb(0, 22, 0), 1.0));
 
             var checkers = new GeometryDrawing(checkerBrush, null, aGeometryGroup);
 
@@ -71,17 +77,41 @@ namespace MufflonoSoft.CodeNinjaSpy
 
         private void FetchCommandsWithBindings()
         {
+            Action updateLoadingState = () => IsLoading = true;
+            _dispatcher.Invoke(updateLoadingState);
+
             var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
 
             if (dte != null)
             {
-                foreach (Command command in dte.Commands)
+                var numberOfCommands = (double)dte.Commands.Count;
+                var commandCounter = 0;
+                try
                 {
-                    var bindings = command.Bindings as object[];
+                    foreach (EnvDTE.Command command in dte.Commands)
+                    {
+                        Action updateProgress = () =>
+                        {
+                            commandCounter++;
+                            Status = commandCounter / numberOfCommands * 100.0;
+                            StatusText = string.Format("Command {0} of {1}", commandCounter, numberOfCommands);
+                        };
 
-                    if (bindings != null && bindings.Length > 0)
-                        _commands.Add(command);
+                        _dispatcher.Invoke(updateProgress);
+
+                        var bindings = command.Bindings as object[];
+
+                        if (bindings != null && bindings.Length > 0)
+                            _commands.Add(new Command(command.Name, (from b in bindings select b.ToString()).ToList()));
+                    }
                 }
+                catch (InvalidComObjectException)
+                {
+                    // user closed the window or closed Visual Studio.
+                }
+
+                updateLoadingState = () => IsLoading = false;
+                _dispatcher.Invoke(updateLoadingState);
             }
         }
 
@@ -93,9 +123,7 @@ namespace MufflonoSoft.CodeNinjaSpy
 
                 foreach (var command in _commands)
                 {
-                    var bindings = command.Bindings as object[];
-
-                    foreach (string binding in bindings)
+                    foreach (string binding in command.Bindings)
                     {
                         var modifiedClosureProtection = binding;
 
@@ -107,6 +135,10 @@ namespace MufflonoSoft.CodeNinjaSpy
                     }
                 }
             }
+
+            var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+            if (dte != null)
+                CurrentWindow = dte.ActiveWindow.ToString();
         }
 
         private static List<string> ConvertToKeyBinding(IEnumerable<Keys> pressedKeys)
@@ -227,6 +259,50 @@ namespace MufflonoSoft.CodeNinjaSpy
             {
                 _nextToLastCommand = value;
                 OnPropertyChanged("NextToLastCommand");
+            }
+        }
+
+        public string CurrentWindow
+        {
+            get { return _currentWindow; }
+
+            set
+            {
+                _currentWindow = value;
+                OnPropertyChanged("CurrentWindow");
+            }
+        }
+
+        public double Status
+        {
+            get { return _status; }
+
+            set
+            {
+                _status = value;
+                OnPropertyChanged("Status");
+            }
+        }
+
+        public string StatusText
+        {
+            get { return _statusText; }
+
+            set
+            {
+                _statusText = value;
+                OnPropertyChanged("StatusText");
+            }
+        }
+
+        public bool IsLoading
+        {
+            get { return _isLoading; }
+
+            set
+            {
+                _isLoading = value;
+                OnPropertyChanged("IsLoading");
             }
         }
 

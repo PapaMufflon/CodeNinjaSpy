@@ -116,6 +116,7 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command.cs" />
     <Compile Include="InterceptKeys.cs" />
     <Compile Include="KeyInterceptedEventArgs.cs" />
     <Compile Include="CodeNinjaSpyShell.xaml.cs">
