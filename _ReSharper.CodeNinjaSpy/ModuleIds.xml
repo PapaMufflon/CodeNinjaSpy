@@ -1,5 +1,0 @@
-<Modules>
-  <Module PersistentId="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" ModuleId="System.Windows.Forms" />
-  <Module PersistentId="75366967-918E-4589-9E2A-A9719C4168F7" ModuleId="CodeNinjaSpy" />
-  <Module PersistentId="3A8AC814-8EC8-47C0-BE86-8928AA52563D" ModuleId="CodeNinjaSpy_IntegrationTests" />
-</Modules>
