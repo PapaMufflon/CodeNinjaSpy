@@ -13,7 +13,6 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
     {
         public event EventHandler<CommandFetchingStatusUpdatedEventArgs> CommandFetchingStatusUpdated;
 
-        private DTE2 _dte;
         private readonly List<Command> _commands = new List<Command>();
 
         public ShortcutToCommandConverter()
@@ -25,16 +24,16 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         {
             OnCommandFetchingStatusUpdatedEventArgs(0, "", true);
 
-            _dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+            var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
 
-            if (_dte != null)
+            if (dte != null)
             {
-                var numberOfCommands = (double)_dte.Commands.Count;
+                var numberOfCommands = (double)dte.Commands.Count;
                 var commandCounter = 0;
 
                 try
                 {
-                    foreach (EnvDTE.Command command in _dte.Commands)
+                    foreach (EnvDTE.Command command in dte.Commands)
                     {
                         commandCounter++;
                         var status = commandCounter / numberOfCommands * 100.0;
@@ -44,7 +43,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                         var bindings = command.Bindings as object[];
 
                         if (bindings != null && bindings.Length > 0)
-                            _commands.Add(new Command(command.Name, (from b in bindings select b.ToString()).ToList()));
+                            _commands.Add(new Command(command.Name, GetBindings(bindings)));
                     }
                 }
                 catch (InvalidComObjectException)
@@ -54,6 +53,15 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
                 OnCommandFetchingStatusUpdatedEventArgs(100, "", false);
             }
+        }
+
+        private static List<string> GetBindings(IEnumerable<object> bindings)
+        {
+            var result = bindings.Select(binding => binding.ToString().IndexOf("::") >= 0
+                ? binding.ToString().Substring(binding.ToString().IndexOf("::") + 2)
+                : binding.ToString()).ToList();
+
+            return result;
         }
 
         private void OnCommandFetchingStatusUpdatedEventArgs(double status, string statusText, bool isLoading)
@@ -74,15 +82,26 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
                 foreach (var command in _commands)
                 {
-                    foreach (var binding in command.Bindings)
-                    {
-                        var modifiedClosureProtection = binding;
+                    if (WasThisTheCommand(command, pressedKeyBinding, ref calledCommand))
+                        return true;
+                }
+            }
 
-                        if (pressedKeyBinding.All(pressedKey => modifiedClosureProtection.ToLower().Contains(pressedKey)))
-                        {
-                            calledCommand = new Command(command.Name, pressedKeyBinding);
-                            return true;
-                        }
+            return false;
+        }
+
+        private static bool WasThisTheCommand(Command command, string pressedKeyBinding, ref Command calledCommand)
+        {
+            foreach (var binding in command.Bindings)
+            {
+                if (binding.ToLower() == pressedKeyBinding)
+                {
+                    var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+
+                    if (dte.Commands.Item(command.Name).IsAvailable)
+                    {
+                        calledCommand = new Command(command.Name, new List<string>{pressedKeyBinding});
+                        return true;
                     }
                 }
             }
@@ -90,40 +109,57 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             return false;
         }
 
-        private static List<string> ConvertToKeyBinding(IEnumerable<Keys> pressedKeys)
+        private static string ConvertToKeyBinding(IEnumerable<Keys> pressedKeysParameter)
         {
-            var keyBinding = new List<string>();
+            var keyBinding = "";
+            var pressedKeys = pressedKeysParameter.Select(k => k); // just copy
 
-            foreach (var pressedKey in pressedKeys)
+            // first ctrl
+            if (pressedKeys.Any(IsControlKey))
             {
-                switch (pressedKey)
-                {
-                    case Keys.Control:
-                    case Keys.ControlKey:
-                    case Keys.LControlKey:
-                    case Keys.RControlKey:
-                        keyBinding.Add("ctrl+");
-                        break;
-
-                    case Keys.Shift:
-                    case Keys.ShiftKey:
-                    case Keys.LShiftKey:
-                    case Keys.RShiftKey:
-                        keyBinding.Add("shift+");
-                        break;
-
-                    case Keys.Alt:
-                    case Keys.LMenu:
-                        keyBinding.Add("alt+");
-                        break;
-
-                    default:
-                        keyBinding.Add(pressedKey.ToString().ToLower());
-                        break;
-                }
+                keyBinding = "ctrl+";
+                pressedKeys = pressedKeys.Where(k => !IsControlKey(k));
             }
 
-            return keyBinding;
+            // then shift
+            if (pressedKeys.Any(IsShiftKey))
+            {
+                keyBinding += "shift+";
+                pressedKeys = pressedKeys.Where(k => !IsShiftKey(k));
+            }
+
+            // then alt
+            if (pressedKeys.Any(IsAltKey))
+            {
+                keyBinding += "alt+";
+                pressedKeys = pressedKeys.Where(k => !IsAltKey(k));
+            }
+
+            keyBinding = pressedKeys.Aggregate(keyBinding, (current, pressedKey) => current + (pressedKey.ToString().ToLower() + "+"));
+
+            return keyBinding.Substring(0, keyBinding.Length - 1);
+        }
+
+        private static bool IsControlKey(Keys key)
+        {
+            return (key == Keys.Control ||
+                    key == Keys.ControlKey ||
+                    key == Keys.LControlKey ||
+                    key == Keys.RControlKey);
+        }
+
+        private static bool IsShiftKey(Keys key)
+        {
+            return (key == Keys.Shift ||
+                    key == Keys.ShiftKey ||
+                    key == Keys.LShiftKey ||
+                    key == Keys.RShiftKey);
+        }
+
+        private static bool IsAltKey(Keys key)
+        {
+            return (key == Keys.Alt ||
+                    key == Keys.LMenu);
         }
     }
 }

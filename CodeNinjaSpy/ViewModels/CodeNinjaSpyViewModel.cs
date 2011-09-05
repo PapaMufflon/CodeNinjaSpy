@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
-using EnvDTE;
-using EnvDTE80;
-using Microsoft.VisualStudio.Shell;
 using MufflonoSoft.CodeNinjaSpy.Keyboard;
 using StatusBar = EnvDTE.StatusBar;
 
@@ -15,14 +12,12 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private DTE2 _dte;
         private string _currentShortcut;
         private string _currentCommand;
         private string _lastShortcut;
         private string _lastCommand;
         private string _nextToLastShortcut;
         private string _nextToLastCommand;
-        private string _currentWindow;
         private double _status;
         private string _statusText;
         private bool _isLoading;
@@ -47,15 +42,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             Command command;
 
             if (_shortcutToCommandConverter.TryGetCommand(pressedKeys, out command))
-            {
                 UpdateShortcut(command);
-                CurrentWindow = DTE.ActiveWindow.ToString();
-            }
-        }
-
-        private DTE2 DTE
-        {
-            get { return _dte ?? (_dte = Package.GetGlobalService(typeof(DTE)) as DTE2); }
         }
 
         private void UpdateShortcut(Command command)
@@ -185,17 +172,6 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             {
                 _nextToLastCommand = value;
                 NotifyOfPropertyChange("NextToLastCommand");
-            }
-        }
-
-        public string CurrentWindow
-        {
-            get { return _currentWindow; }
-
-            set
-            {
-                _currentWindow = value;
-                NotifyOfPropertyChange("CurrentWindow");
             }
         }
     }
