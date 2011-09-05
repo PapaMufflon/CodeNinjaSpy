@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
+using MufflonoSoft.CodeNinjaSpy.Views;
 
 namespace MufflonoSoft.CodeNinjaSpy
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MufflonoSoft.CodeNinjaSpy
+namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 {
     class Command
     {
