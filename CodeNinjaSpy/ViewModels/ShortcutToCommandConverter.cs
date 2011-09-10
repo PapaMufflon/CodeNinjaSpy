@@ -72,19 +72,19 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                 handler(this, new CommandFetchingStatusUpdatedEventArgs(status, statusText, isLoading));
         }
 
-        public bool TryGetCommand(ICollection<Keys> pressedKeys, out Command calledCommand)
+        public bool TryGetCommand(List<List<Keys>> keyCombinations, out Command calledCommand)
         {
             calledCommand = null;
 
-            if (pressedKeys.Count > 1)
-            {
-                var pressedKeyBinding = ConvertToKeyBinding(pressedKeys);
+            if (keyCombinations.Select(a => a.Count).Sum() <= 1)
+                return false;
 
-                foreach (var command in _commands)
-                {
-                    if (WasThisTheCommand(command, pressedKeyBinding, ref calledCommand))
-                        return true;
-                }
+            var pressedKeyBinding = ConvertToKeyBinding(keyCombinations);
+
+            foreach (var command in _commands)
+            {
+                if (WasThisTheCommand(command, pressedKeyBinding, ref calledCommand))
+                    return true;
             }
 
             return false;
@@ -100,7 +100,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
                     if (dte.Commands.Item(command.Name).IsAvailable)
                     {
-                        calledCommand = new Command(command.Name, new List<string>{pressedKeyBinding});
+                        calledCommand = new Command(command.Name, new List<string> { pressedKeyBinding });
                         return true;
                     }
                 }
@@ -109,38 +109,91 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             return false;
         }
 
-        private static string ConvertToKeyBinding(IEnumerable<Keys> pressedKeysParameter)
+        private static string ConvertToKeyBinding(List<List<Keys>> keyCombinations)
         {
             var keyBinding = "";
-            var pressedKeys = pressedKeysParameter.Select(k => k); // just copy
 
-            // first ctrl
-            if (pressedKeys.Any(IsControlKey))
+            foreach (var pressedKeysParameter in keyCombinations)
             {
-                keyBinding = "ctrl+";
-                pressedKeys = pressedKeys.Where(k => !IsControlKey(k));
+                var pressedKeys = pressedKeysParameter.Select(k => k); // just copy
+                var singleKeyBinding = "";
+
+                // first ctrl
+                if (pressedKeys.Any(IsControlKey))
+                {
+                    singleKeyBinding = "ctrl+";
+                    pressedKeys = pressedKeys.Where(k => !IsControlKey(k));
+                }
+
+                // then shift
+                if (pressedKeys.Any(IsShiftKey))
+                {
+                    singleKeyBinding += "shift+";
+                    pressedKeys = pressedKeys.Where(k => !IsShiftKey(k));
+                }
+
+                // then alt
+                if (pressedKeys.Any(IsAltKey))
+                {
+                    singleKeyBinding += "alt+";
+                    pressedKeys = pressedKeys.Where(k => !IsAltKey(k));
+                }
+
+                singleKeyBinding = pressedKeys.Aggregate(singleKeyBinding, (current, pressedKey) => current + (KeyToString(pressedKey) + "+"));
+                singleKeyBinding = singleKeyBinding.Substring(0, singleKeyBinding.Length - 1);
+
+                keyBinding += singleKeyBinding + ", ";
             }
 
-            // then shift
-            if (pressedKeys.Any(IsShiftKey))
-            {
-                keyBinding += "shift+";
-                pressedKeys = pressedKeys.Where(k => !IsShiftKey(k));
-            }
-
-            // then alt
-            if (pressedKeys.Any(IsAltKey))
-            {
-                keyBinding += "alt+";
-                pressedKeys = pressedKeys.Where(k => !IsAltKey(k));
-            }
-
-            keyBinding = pressedKeys.Aggregate(keyBinding, (current, pressedKey) => current + (pressedKey.ToString().ToLower() + "+"));
-
-            return keyBinding.Substring(0, keyBinding.Length - 1);
+            return keyBinding.Substring(0, keyBinding.Length - 2);
         }
 
-        private static bool IsControlKey(Keys key)
+        private static string KeyToString(Keys pressedKey)
+        {
+            var result = "";
+
+            switch (pressedKey)
+            {
+                case Keys.Up:
+                case Keys.Down:
+                case Keys.Left:
+                case Keys.Right:
+                    result = pressedKey.ToString().ToLower() + " arrow";
+                    break;
+
+                case Keys.Escape:
+                    result = "esc";
+                    break;
+
+                case Keys.Insert:
+                    result = "ins";
+                    break;
+
+                case Keys.PageUp:
+                    result = "pgup";
+                    break;
+
+                case Keys.PageDown:
+                    result = "pgdn";
+                    break;
+
+                case Keys.Delete:
+                    result = "del";
+                    break;
+
+                case Keys.Return:
+                    result = "enter";
+                    break;
+
+                default:
+                    result = pressedKey.ToString();
+                    break;
+            }
+
+            return result;
+        }
+
+        public static bool IsControlKey(Keys key)
         {
             return (key == Keys.Control ||
                     key == Keys.ControlKey ||
@@ -148,7 +201,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                     key == Keys.RControlKey);
         }
 
-        private static bool IsShiftKey(Keys key)
+        public static bool IsShiftKey(Keys key)
         {
             return (key == Keys.Shift ||
                     key == Keys.ShiftKey ||
@@ -156,7 +209,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                     key == Keys.RShiftKey);
         }
 
-        private static bool IsAltKey(Keys key)
+        public static bool IsAltKey(Keys key)
         {
             return (key == Keys.Alt ||
                     key == Keys.LMenu);

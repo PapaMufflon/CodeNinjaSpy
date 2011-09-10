@@ -23,6 +23,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         private bool _isLoading;
         private readonly InterceptKeys _keyInterceptor;
         private readonly ShortcutToCommandConverter _shortcutToCommandConverter = new ShortcutToCommandConverter();
+        private List<List<Keys>> _keyCombinations = new List<List<Keys>>();
 
         public CodeNinjaSpyViewModel()
         {
@@ -41,8 +42,20 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         {
             Command command;
 
-            if (_shortcutToCommandConverter.TryGetCommand(pressedKeys, out command))
+            // a shortcut begins with at least two keys pressed simultaneously
+            if ( (_keyCombinations.Count == 0 && pressedKeys.Count <= 1) ||
+                (pressedKeys.Where(x => !(ShortcutToCommandConverter.IsAltKey(x) ||
+                    ShortcutToCommandConverter.IsControlKey(x) ||
+                    ShortcutToCommandConverter.IsShiftKey(x))).Count() == 0) )
+                return;
+
+            _keyCombinations.Add(pressedKeys.ToList());
+
+            if (_shortcutToCommandConverter.TryGetCommand(_keyCombinations, out command))
+            {
+                _keyCombinations.Clear();
                 UpdateShortcut(command);
+            }
         }
 
         private void UpdateShortcut(Command command)
