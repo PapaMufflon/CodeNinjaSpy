@@ -7,11 +7,13 @@
     <Description xml:space="preserve">Look over the shoulders of a code ninja and see what shortcut he uses.</Description>
     <Locale>1033</Locale>
     <MoreInfoUrl>http://github.com/PapaMufflon/CodNinjaSpy</MoreInfoUrl>
-    <Icon>ninja-icon.png</Icon>
-    <PreviewImage>CodeNinjaSpy.png</PreviewImage>
+    <Icon>Resources\ninja-icon.png</Icon>
+    <PreviewImage>Resources\CodeNinjaSpy.png</PreviewImage>
     <InstalledByMsi>false</InstalledByMsi>
     <SupportedProducts>
       <VisualStudio Version="10.0">
+        <Edition>Ultimate</Edition>
+        <Edition>Premium</Edition>
         <Edition>Pro</Edition>
       </VisualStudio>
     </SupportedProducts>

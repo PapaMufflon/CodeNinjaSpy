@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
 using MufflonoSoft.CodeNinjaSpy.Keyboard;
-using StatusBar = EnvDTE.StatusBar;
 
 namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 {
@@ -23,7 +21,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         private bool _isLoading;
         private readonly InterceptKeys _keyInterceptor;
         private readonly ShortcutToCommandConverter _shortcutToCommandConverter = new ShortcutToCommandConverter();
-        private List<List<Keys>> _keyCombinations = new List<List<Keys>>();
+        private readonly List<List<Keys>> _keyCombinations = new List<List<Keys>>();
 
         public CodeNinjaSpyViewModel()
         {
@@ -33,20 +31,23 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                 StatusText = e.StatusText;
                 IsLoading = e.IsLoading;
             };
-
+            
             _keyInterceptor = new InterceptKeys();
-            _keyInterceptor.KeyIntercepted += (s, e) => TryGetCommand(e.PressedKeys);
+            _keyInterceptor.KeyIntercepted += (sender, eArgs) => TryGetCommand(eArgs.PressedKeys);
         }
 
         private void TryGetCommand(ICollection<Keys> pressedKeys)
         {
+            if (IsLoading)
+                return;
+
             Command command;
 
             // a shortcut begins with at least two keys pressed simultaneously
-            if ( (_keyCombinations.Count == 0 && pressedKeys.Count <= 1) ||
+            if ((_keyCombinations.Count == 0 && pressedKeys.Count <= 1) ||
                 (pressedKeys.Where(x => !(ShortcutToCommandConverter.IsAltKey(x) ||
                     ShortcutToCommandConverter.IsControlKey(x) ||
-                    ShortcutToCommandConverter.IsShiftKey(x))).Count() == 0) )
+                    ShortcutToCommandConverter.IsShiftKey(x))).Count() == 0))
                 return;
 
             _keyCombinations.Add(pressedKeys.ToList());

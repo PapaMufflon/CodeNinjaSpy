@@ -158,7 +158,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                 case Keys.Down:
                 case Keys.Left:
                 case Keys.Right:
-                    result = pressedKey.ToString().ToLower() + " arrow";
+                    result = pressedKey + " arrow";
                     break;
 
                 case Keys.Escape:
@@ -190,7 +190,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                     break;
             }
 
-            return result;
+            return result.ToLower();
         }
 
         public static bool IsControlKey(Keys key)
