@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
 using EnvDTE;
 using EnvDTE80;
@@ -13,7 +15,9 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
     {
         public event EventHandler<CommandFetchingStatusUpdatedEventArgs> CommandFetchingStatusUpdated;
 
-        private readonly List<Command> _commands = new List<Command>();
+        private static readonly string _commandsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CodeNinjaSpyCommands.dat");
+
+        private List<Command> _commands = new List<Command>();
 
         public ShortcutToCommandConverter()
         {
@@ -24,6 +28,31 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         {
             OnCommandFetchingStatusUpdatedEventArgs(0, "", true);
 
+            if (!TryGetSerializedCommands())
+                GetCommandsFromVisualStudio();
+
+            OnCommandFetchingStatusUpdatedEventArgs(100, "", false);
+        }
+
+        private bool TryGetSerializedCommands()
+        {
+            try
+            {
+                var stream = File.Open(_commandsPath, FileMode.Open);
+                var bFormatter = new CustomFormatter();
+                _commands = bFormatter.Deserialize(stream);
+                stream.Close();
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private void GetCommandsFromVisualStudio()
+        {
             var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
 
             if (dte != null)
@@ -43,16 +72,26 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                         var bindings = command.Bindings as object[];
 
                         if (bindings != null && bindings.Length > 0)
-                            _commands.Add(new Command(command.Name, GetBindings(bindings)));
+                        {
+                            _commands.Add(new Command(string.IsNullOrEmpty(command.Name) ? "no Name" : command.Name, GetBindings(bindings)));
+                        }
                     }
                 }
                 catch (InvalidComObjectException)
                 {
                     // user closed the window or closed Visual Studio.
                 }
-
-                OnCommandFetchingStatusUpdatedEventArgs(100, "", false);
             }
+
+            SerializeCommands();
+        }
+
+        private void SerializeCommands()
+        {
+            var stream = File.Open(_commandsPath, FileMode.Create);
+            var bFormatter = new CustomFormatter();
+            bFormatter.Serialize(stream, _commands);
+            stream.Close();
         }
 
         private static List<string> GetBindings(IEnumerable<object> bindings)

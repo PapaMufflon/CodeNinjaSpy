@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 {
+    [Serializable]
     class Command
     {
         public string Name { get; private set; }

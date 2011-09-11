@@ -29,8 +29,8 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Revision and Build Numbers 
 // by using the '*' as shown below:
 
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.0.1.0")]
 
 [assembly: InternalsVisibleTo("CodeNinjaSpy_IntegrationTests, PublicKey=00240000048000009400000006020000002400005253413100040000010001002da34da42d8b07a5f4616cc5d3104aa8101396ecb6d22a386d798f9460fd1e797c09b7595104c2e02de32713482c6846a41adf25fd03e05ca9692f437fb91ff8e744e1f9a8d77511fe3b76cfce7b0e081737f1b57bf6f3a7bcfd8cfa2f35422b8579ac1851b459e11219ca547459340a55069092f6bb090629c93cee975d92b1")]
 
