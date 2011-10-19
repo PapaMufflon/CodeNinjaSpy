@@ -117,6 +117,8 @@
     </COMReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Logging\ILogger.cs" />
+    <Compile Include="Logging\SimpleLogger.cs" />
     <Compile Include="ViewModels\Command.cs" />
     <Compile Include="Keyboard\InterceptKeys.cs" />
     <Compile Include="Keyboard\KeyInterceptedEventArgs.cs" />
@@ -125,6 +127,7 @@
     <Compile Include="ViewModels\CommandWithoutShortcutEventArgs.cs" />
     <Compile Include="ViewModels\CustomFormatter.cs" />
     <Compile Include="ViewModels\ShortcutToCommandConverter.cs" />
+    <Compile Include="ViewModels\ToggleDebugCommand.cs" />
     <Compile Include="Views\CodeNinjaSpyShell.xaml.cs">
       <DependentUpon>CodeNinjaSpyShell.xaml</DependentUpon>
     </Compile>

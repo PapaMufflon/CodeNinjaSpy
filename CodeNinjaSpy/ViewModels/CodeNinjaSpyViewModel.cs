@@ -2,7 +2,9 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Windows.Forms;
+using System.Windows.Input;
 using MufflonoSoft.CodeNinjaSpy.Keyboard;
+using MufflonoSoft.CodeNinjaSpy.Logging;
 
 namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 {
@@ -19,12 +21,15 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         private double _status;
         private string _statusText;
         private bool _isLoading;
+        private double _debugOpacity;
         private readonly InterceptKeys _keyInterceptor;
-        private readonly ShortcutToCommandConverter _shortcutToCommandConverter = new ShortcutToCommandConverter();
+        private readonly ShortcutToCommandConverter _shortcutToCommandConverter;
         private readonly List<List<Keys>> _keyCombinations = new List<List<Keys>>();
+        private readonly ILogger _logger = new SimpleLogger();
 
         public CodeNinjaSpyViewModel()
         {
+            _shortcutToCommandConverter = new ShortcutToCommandConverter(_logger);
             _shortcutToCommandConverter.CommandFetchingStatusUpdated += (s, e) =>
             {
                 Status = e.Status;
@@ -39,6 +44,8 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
             _keyInterceptor = new InterceptKeys();
             _keyInterceptor.KeyIntercepted += (sender, eArgs) => TryGetCommand(eArgs.PressedKeys);
+
+            _debugOpacity = 0.01;
         }
 
         private void TryGetCommand(ICollection<Keys> pressedKeys)
@@ -60,6 +67,10 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             {
                 _keyCombinations.Clear();
                 UpdateShortcut(commands);
+            }
+            else
+            {
+                _logger.Log("Cannot find a shortcut with these bindings: " + ShortcutToCommandConverter.ConvertToKeyBinding(_keyCombinations));
             }
         }
 
@@ -83,6 +94,11 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
             if (handler != null)
                 handler(this, new PropertyChangedEventArgs(property));
+        }
+
+        public ICommand ToggleDebugCommand
+        {
+            get { return new ToggleDebugCommand(this, _logger); }
         }
 
         public bool IsLoading
@@ -190,6 +206,16 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             {
                 _nextToLastCommand = value;
                 NotifyOfPropertyChange("NextToLastCommand");
+            }
+        }
+
+        public double DebugOpacity
+        {
+            get { return _debugOpacity; }
+            set
+            {
+                _debugOpacity = value;
+                NotifyOfPropertyChange("DebugOpacity");
             }
         }
     }

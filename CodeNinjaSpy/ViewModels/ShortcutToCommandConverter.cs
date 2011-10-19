@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using EnvDTE;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
+using MufflonoSoft.CodeNinjaSpy.Logging;
 
 namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 {
@@ -17,11 +18,13 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
         private static readonly string _commandsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CodeNinjaSpyCommands.dat");
 
+        private readonly ILogger _logger;
         private List<Command> _commands = new List<Command>();
         private DTE2 _dte;
 
-        public ShortcutToCommandConverter()
+        public ShortcutToCommandConverter(ILogger logger)
         {
+            _logger = logger;
             System.Threading.Tasks.Task.Factory.StartNew(FetchCommandsWithBindings);
         }
 
@@ -91,7 +94,8 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                 }
             }
 
-            SerializeCommands();
+            _logger.Log(string.Format("Loaded {0} commands.", _commands.Count));
+            //SerializeCommands();
 
         }
 
@@ -169,7 +173,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             return null;
         }
 
-        private static string ConvertToKeyBinding(List<List<Keys>> keyCombinations)
+        internal static string ConvertToKeyBinding(List<List<Keys>> keyCombinations)
         {
             var keyBinding = "";
 
