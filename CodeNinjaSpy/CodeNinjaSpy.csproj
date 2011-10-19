@@ -122,6 +122,7 @@
     <Compile Include="Keyboard\KeyInterceptedEventArgs.cs" />
     <Compile Include="ViewModels\CodeNinjaSpyViewModel.cs" />
     <Compile Include="ViewModels\CommandFetchingStatusUpdatedEventArgs.cs" />
+    <Compile Include="ViewModels\CommandWithoutShortcutEventArgs.cs" />
     <Compile Include="ViewModels\CustomFormatter.cs" />
     <Compile Include="ViewModels\ShortcutToCommandConverter.cs" />
     <Compile Include="Views\CodeNinjaSpyShell.xaml.cs">

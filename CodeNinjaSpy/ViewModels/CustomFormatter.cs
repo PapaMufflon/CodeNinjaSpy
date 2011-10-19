@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio.Shell;
 
 namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 {
@@ -27,6 +30,10 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                     serializedCommands.Append(",");
                 }
 
+                serializedCommands.Append(":");
+                serializedCommands.Append(command.Guid);
+                serializedCommands.Append(":");
+                serializedCommands.Append(command.Id);
                 serializedCommands.Append(";");
             }
 
@@ -36,28 +43,24 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
         public List<Command> Deserialize(FileStream stream)
         {
+            var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
             var commands = new List<Command>();
 
             var buffer = new byte[stream.Length];
             stream.Read(buffer, 0, buffer.Length);
 
             var content = Encoding.ASCII.GetString(buffer);
-            var commandsAsString = content.Split(new[] {";"}, StringSplitOptions.RemoveEmptyEntries);
+            var commandsAsString = content.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
 
             foreach (var commandAsString in commandsAsString)
             {
-                try
-                {
-                    var slicedCommand = commandAsString.Split(new[] { ":" }, StringSplitOptions.RemoveEmptyEntries);
-                    var bindings = slicedCommand[1].Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                var slicedCommand = commandAsString.Split(new[] { ":" }, StringSplitOptions.RemoveEmptyEntries);
 
-                    commands.Add(new Command(slicedCommand[0], bindings));
-                }
-                catch (Exception)
-                {
-                    
-                    throw;
-                }
+                var name = slicedCommand[0];
+                var bindings = slicedCommand[1].Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                var guid = slicedCommand[2];
+                var id = int.Parse(slicedCommand[3]);
+                commands.Add(new Command(name, bindings, guid, id, dte.Events.CommandEvents[guid, id]));
             }
 
             return commands;

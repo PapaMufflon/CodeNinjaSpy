@@ -25,7 +25,7 @@
             <TextBlock Text="{Binding LastCommand, Mode=OneWay}" Foreground="#FF008600" Margin="0,180,0,90" HorizontalAlignment="Center" />
             <TextBlock Text="{Binding NextToLastShortcut, Mode=OneWay}" FontSize="18" Foreground="#FF009000" Margin="0,220,0,50" HorizontalAlignment="Center" />
             <TextBlock Text="{Binding NextToLastCommand, Mode=OneWay}" Foreground="#FF008600" Margin="0,250,0,20" HorizontalAlignment="Center" />
-            <Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <!--<Grid Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Rectangle Width="300" Height="300" Fill="Black" Opacity="0.4"/>
                 <TextBox Text="Loading" Background="Transparent" Foreground="#FF00AA00" FontSize="36" HorizontalAlignment="Center" Margin="0,120,0,120" BorderThickness="0" IsReadOnly="True">
                     <TextBox.Triggers>
@@ -41,7 +41,7 @@
                 </TextBox>
                 <ProgressBar Value="{Binding Status}" Minimum="0" Maximum="100" Background="Transparent" HorizontalAlignment="Center" Margin="20,180,20,80" Width="260" Opacity="0.5"/>
                 <TextBox Text="{Binding StatusText}" Background="Transparent" Foreground="#FF00AA00" FontSize="22" HorizontalAlignment="Center" Margin="0,180,0,80" BorderThickness="0" Opacity="0.7" IsReadOnly="True" />
-            </Grid>
+            </Grid>-->
         </Grid>
     </Viewbox>
 </UserControl>

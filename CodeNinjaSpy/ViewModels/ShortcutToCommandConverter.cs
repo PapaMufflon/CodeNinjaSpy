@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
 using EnvDTE;
 using EnvDTE80;
@@ -14,10 +13,12 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
     internal class ShortcutToCommandConverter
     {
         public event EventHandler<CommandFetchingStatusUpdatedEventArgs> CommandFetchingStatusUpdated;
+        public event EventHandler<CommandWithoutShortcutEventArgs> CommandWithoutShortcut;
 
         private static readonly string _commandsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CodeNinjaSpyCommands.dat");
 
         private List<Command> _commands = new List<Command>();
+        private DTE2 _dte;
 
         public ShortcutToCommandConverter()
         {
@@ -28,8 +29,8 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         {
             OnCommandFetchingStatusUpdatedEventArgs(0, "", true);
 
-            if (!TryGetSerializedCommands())
-                GetCommandsFromVisualStudio();
+            //if (!TryGetSerializedCommands())
+            GetCommandsFromVisualStudio();
 
             OnCommandFetchingStatusUpdatedEventArgs(100, "", false);
         }
@@ -53,16 +54,16 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
         private void GetCommandsFromVisualStudio()
         {
-            var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+            _dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
 
-            if (dte != null)
+            if (_dte != null)
             {
-                var numberOfCommands = (double)dte.Commands.Count;
+                var numberOfCommands = (double)_dte.Commands.Count;
                 var commandCounter = 0;
 
                 try
                 {
-                    foreach (EnvDTE.Command command in dte.Commands)
+                    foreach (EnvDTE.Command command in _dte.Commands)
                     {
                         commandCounter++;
                         var status = commandCounter / numberOfCommands * 100.0;
@@ -73,7 +74,14 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
                         if (bindings != null && bindings.Length > 0)
                         {
-                            _commands.Add(new Command(string.IsNullOrEmpty(command.Name) ? "no Name" : command.Name, GetBindings(bindings)));
+                            var commandEvent = _dte.Events.CommandEvents[command.Guid, command.ID];
+                            commandEvent.AfterExecute += CommandExecuted;
+
+                            _commands.Add(new Command(string.IsNullOrEmpty(command.Name) ? "no Name" : command.Name,
+                                GetBindings(bindings),
+                                command.Guid,
+                                command.ID,
+                                commandEvent));
                         }
                     }
                 }
@@ -84,6 +92,23 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             }
 
             SerializeCommands();
+
+        }
+
+        private void CommandExecuted(string guid, int id, object customin, object customout)
+        {
+            var command = _commands.Where(x => x.Guid == guid && x.Id == id).FirstOrDefault();
+
+            if (command != null && command.Name != "Format.AlignBottoms")
+                OnCommandWithoutShortcut(command);
+        }
+
+        private void OnCommandWithoutShortcut(Command command)
+        {
+            var handler = CommandWithoutShortcut;
+
+            if (handler != null)
+                handler(this, new CommandWithoutShortcutEventArgs(command));
         }
 
         private void SerializeCommands()
@@ -111,10 +136,8 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                 handler(this, new CommandFetchingStatusUpdatedEventArgs(status, statusText, isLoading));
         }
 
-        public bool TryGetCommand(List<List<Keys>> keyCombinations, out Command calledCommand)
+        public bool TryGetCommand(List<List<Keys>> keyCombinations, List<Command> calledCommands)
         {
-            calledCommand = null;
-
             if (keyCombinations.Select(a => a.Count).Sum() <= 1)
                 return false;
 
@@ -122,14 +145,15 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
             foreach (var command in _commands)
             {
-                if (WasThisTheCommand(command, pressedKeyBinding, ref calledCommand))
-                    return true;
+                var commandMatchingKeyBinding = GetMatchingKeyBinding(command, pressedKeyBinding);
+                if (commandMatchingKeyBinding != null)
+                    calledCommands.Add(commandMatchingKeyBinding);
             }
 
-            return false;
+            return calledCommands.Count > 0;
         }
 
-        private static bool WasThisTheCommand(Command command, string pressedKeyBinding, ref Command calledCommand)
+        private static Command GetMatchingKeyBinding(Command command, string pressedKeyBinding)
         {
             foreach (var binding in command.Bindings)
             {
@@ -138,14 +162,11 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                     var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
 
                     if (dte.Commands.Item(command.Name).IsAvailable)
-                    {
-                        calledCommand = new Command(command.Name, new List<string> { pressedKeyBinding });
-                        return true;
-                    }
+                        return new Command(command.Name, new List<string> { pressedKeyBinding }, command.Guid, command.Id, null);
                 }
             }
 
-            return false;
+            return null;
         }
 
         private static string ConvertToKeyBinding(List<List<Keys>> keyCombinations)

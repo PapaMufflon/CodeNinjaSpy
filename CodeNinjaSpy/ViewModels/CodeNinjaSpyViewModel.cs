@@ -31,7 +31,12 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
                 StatusText = e.StatusText;
                 IsLoading = e.IsLoading;
             };
-            
+
+            _shortcutToCommandConverter.CommandWithoutShortcut += (s, e) =>
+            {
+                UpdateShortcut(new List<Command> { e.Command });
+            };
+
             _keyInterceptor = new InterceptKeys();
             _keyInterceptor.KeyIntercepted += (sender, eArgs) => TryGetCommand(eArgs.PressedKeys);
         }
@@ -40,8 +45,6 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
         {
             if (IsLoading)
                 return;
-
-            Command command;
 
             // a shortcut begins with at least two keys pressed simultaneously
             if ((_keyCombinations.Count == 0 && pressedKeys.Count <= 1) ||
@@ -52,16 +55,17 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
 
             _keyCombinations.Add(pressedKeys.ToList());
 
-            if (_shortcutToCommandConverter.TryGetCommand(_keyCombinations, out command))
+            var commands = new List<Command>();
+            if (_shortcutToCommandConverter.TryGetCommand(_keyCombinations, commands))
             {
                 _keyCombinations.Clear();
-                UpdateShortcut(command);
+                UpdateShortcut(commands);
             }
         }
 
-        private void UpdateShortcut(Command command)
+        private void UpdateShortcut(List<Command> commands)
         {
-            var lastShortcut = command.Bindings.Aggregate("", (s, key) => s + key.ToString());
+            var lastShortcut = commands[0].Bindings[0];
             if (lastShortcut.EndsWith("+"))
                 lastShortcut = lastShortcut.Substring(0, lastShortcut.Length - 1);
 
@@ -70,7 +74,7 @@ namespace MufflonoSoft.CodeNinjaSpy.ViewModels
             LastShortcut = CurrentShortcut;
             LastCommand = CurrentCommand;
             CurrentShortcut = lastShortcut;
-            CurrentCommand = command.Name;
+            CurrentCommand = commands[0].Name;
         }
 
         private void NotifyOfPropertyChange(string property)
