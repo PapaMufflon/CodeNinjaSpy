@@ -3,7 +3,7 @@
   <Identifier Id="8524ed92-ffa6-476e-9caa-b30c4d2f8d17">
     <Name>CodeNinjaSpy</Name>
     <Author>Mufflon-o-Soft</Author>
-    <Version>1.0</Version>
+    <Version>1.0.1</Version>
     <Description xml:space="preserve">Look over the shoulders of a code ninja and see what shortcut he uses.</Description>
     <Locale>1033</Locale>
     <MoreInfoUrl>http://github.com/PapaMufflon/CodeNinjaSpy</MoreInfoUrl>
@@ -12,6 +12,16 @@
     <InstalledByMsi>false</InstalledByMsi>
     <SupportedProducts>
       <VisualStudio Version="10.0">
+        <Edition>Ultimate</Edition>
+        <Edition>Premium</Edition>
+        <Edition>Pro</Edition>
+      </VisualStudio>
+      <VisualStudio Version="11.0">
+        <Edition>Ultimate</Edition>
+        <Edition>Premium</Edition>
+        <Edition>Pro</Edition>
+      </VisualStudio>
+      <VisualStudio Version="12.0">
         <Edition>Ultimate</Edition>
         <Edition>Premium</Edition>
         <Edition>Pro</Edition>
